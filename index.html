@@ -66,21 +66,11 @@
   /* ── Main Shell ── */
   #appShell { display: none; flex-direction: column; flex: 1; overflow: hidden; }
 
-  /* ── Vessel Bar ── */
-  .vessel-bar {
-    padding: 8px 18px; background: var(--surface); border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-  }
-  .vessel-bar-label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1.5px; }
-  #repoVesselSelector { display: flex; gap: 6px; flex-wrap: wrap; }
-  #repoUploadBtn { margin-left: auto; }
-  .vessel-sel-btn {
-    padding: 5px 14px; border-radius: 4px; border: 1px solid var(--border-light);
-    background: var(--surface2); color: var(--text-dim); font-family: var(--mono);
-    font-size: 10px; cursor: pointer; transition: all 0.12s;
-  }
-  .vessel-sel-btn:hover { border-color: var(--amber); color: var(--amber); }
-  .vessel-sel-btn.active { background: var(--amber); color: #000; border-color: var(--amber); font-weight: 700; }
+  /* ── Vessel dropdown in sidebar ── */
+  #repoVesselSelector option { background: var(--surface2); }
+  #repoVesselSelector:focus { outline: none; border-color: var(--amber); }
+  .sidebar-section { padding-top: 12px; }
+  .sidebar-divider { border-top: 1px solid var(--border); margin: 4px 0 8px; }
 
   /* ── Body Layout ── */
   .oracle-body { display: flex; flex: 1; overflow: hidden; }
@@ -159,6 +149,126 @@
   .prog-bar { height: 4px; background: var(--surface2); border-radius: 2px; margin: 8px 0; }
   .prog-bar-fill { height: 100%; background: var(--amber); border-radius: 2px; width: 0%; transition: width 0.3s; }
 
+  /* ── Ask Bar ── */
+  .ask-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; background: var(--surface);
+    border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+  .ask-bar-icon { background: none; border: none; cursor: pointer; padding: 4px; flex-shrink: 0; }
+  .ask-bar #repoQuestion {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 8px 14px; color: var(--text); font-size: 12px;
+    resize: none; font-family: inherit; line-height: 1.4;
+  }
+  .ask-bar #repoQuestion:focus { outline: none; border-color: var(--blue); }
+  .ask-bar #repoAskBtn {
+    padding: 8px 16px; background: var(--amber); color: #000;
+    border: none; border-radius: 20px; font-family: var(--mono);
+    font-size: 10px; font-weight: 700; cursor: pointer; flex-shrink: 0;
+  }
+  .ask-bar #repoAskBtn:hover { background: #e09610; }
+
+  /* ── Floating Chat Window ── */
+  .chat-backdrop {
+    position: fixed; inset: 0; z-index: 800;
+    background: rgba(0,0,0,0.3); backdrop-filter: blur(2px);
+  }
+  .chat-window {
+    position: fixed; bottom: 70px; right: 24px;
+    width: 440px; max-height: 70vh;
+    background: var(--surface); border: 1px solid var(--border-light);
+    border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    z-index: 900; display: flex; flex-direction: column; overflow: hidden;
+  }
+  .chat-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid var(--border);
+    background: var(--surface2); flex-shrink: 0;
+  }
+  .chat-close {
+    background: none; border: none; color: var(--text-dim);
+    font-size: 14px; cursor: pointer; padding: 4px 8px; border-radius: 4px;
+  }
+  .chat-close:hover { color: var(--text-bright); background: var(--surface); }
+  .chat-messages {
+    flex: 1; overflow-y: auto; padding: 16px; display: flex;
+    flex-direction: column; gap: 12px; min-height: 200px;
+  }
+  .chat-welcome {
+    text-align: center; padding: 24px 16px; color: var(--text-dim);
+  }
+  .chat-bubble-user {
+    display: flex; justify-content: flex-end;
+  }
+  .chat-bubble-user > div {
+    background: rgba(96,165,250,0.12); border: 1px solid rgba(96,165,250,0.2);
+    border-radius: 14px 14px 4px 14px; padding: 10px 14px;
+    max-width: 85%; font-size: 12px; color: var(--text-bright); line-height: 1.5;
+  }
+  .chat-bubble-oracle {
+    display: flex; gap: 8px; align-items: flex-start;
+  }
+  .chat-bubble-oracle .avatar {
+    width: 26px; height: 26px; background: rgba(245,166,35,0.15);
+    border: 1px solid rgba(245,166,35,0.3); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; flex-shrink: 0; margin-top: 2px;
+  }
+  .chat-bubble-oracle .bubble {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px 14px 14px 14px; padding: 12px 14px;
+    max-width: 85%; font-size: 12px; line-height: 1.6; color: var(--text);
+  }
+  .chat-bubble-oracle .bubble .section-label {
+    font-family: var(--mono); font-size: 8px; color: var(--text-dim);
+    letter-spacing: 1.5px; margin-bottom: 6px; display: flex; align-items: center; gap: 5px;
+  }
+  .chat-bubble-oracle .bubble .section-label .dot {
+    width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  }
+  .chat-typing {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .chat-typing .avatar {
+    width: 26px; height: 26px; background: rgba(245,166,35,0.15);
+    border: 1px solid rgba(245,166,35,0.3); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0;
+  }
+  .typing-dots {
+    display: flex; gap: 4px; padding: 10px 14px;
+    background: var(--surface2); border-radius: 4px 14px 14px 14px;
+    border: 1px solid var(--border);
+  }
+  .typing-dots span {
+    width: 6px; height: 6px; background: var(--text-dim);
+    border-radius: 50%; animation: blink 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,80%,100%{opacity:0.2} 40%{opacity:1} }
+  .chat-sources {
+    font-family: var(--mono); font-size: 8px; color: var(--text-dim);
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  .chat-input-area {
+    padding: 12px 14px; border-top: 1px solid var(--border);
+    background: var(--surface2); flex-shrink: 0;
+  }
+  .chat-textarea {
+    width: 100%; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--text);
+    font-size: 12px; resize: none; font-family: inherit; line-height: 1.4;
+  }
+  .chat-textarea:focus { outline: none; border-color: var(--blue); }
+  .chat-send-btn {
+    width: 36px; height: 36px; background: var(--amber); border: none;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center;
+    justify-content: center; flex-shrink: 0;
+  }
+  .chat-send-btn:hover { background: #e09610; }
+  .chat-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
   /* ── Toast ── */
   #toastEl { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 18px; font-family: var(--mono); font-size: 11px; color: var(--text-bright); z-index: 9999; display: none; }
 </style>
@@ -194,17 +304,21 @@
     </div>
   </div>
 
-  <!-- Vessel Bar -->
-  <div class="vessel-bar">
-    <span class="vessel-bar-label">VESSEL</span>
-    <div id="repoVesselSelector"></div>
-    <div id="repoUploadBtn"></div>
-  </div>
-
   <!-- Body -->
   <div class="oracle-body">
     <!-- Sidebar -->
     <div class="oracle-sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-label">VESSEL</div>
+        <div style="padding:0 12px 12px;">
+          <select id="repoVesselSelector" onchange="repoPickVesselFromDropdown(this.value)"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:7px 10px;color:var(--text-bright);font-family:var(--mono);font-size:10px;cursor:pointer;">
+            <option value="">— Select vessel —</option>
+          </select>
+        </div>
+        <div id="repoUploadBtn" style="padding:0 12px 8px;"></div>
+      </div>
+      <div class="sidebar-divider"></div>
       <div class="sidebar-label">CATEGORIES</div>
       <div id="repoCatList"></div>
     </div>
@@ -226,16 +340,16 @@
         <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);padding:20px;">Select a vessel to view manuals</div>
       </div>
 
-      <!-- Q&A Panel -->
-      <div class="qa-panel">
-        <div class="qa-input-row">
-          <textarea id="repoQuestion" rows="2"
-            placeholder="Ask a question about this vessel's manuals… e.g. What is the oil change interval for the cargo compressor?"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();repoAsk();}"></textarea>
-          <button id="repoAskBtn" onclick="repoAsk()">ASK</button>
-        </div>
-        <div class="qa-hint">Select a category first to narrow the search · Enter to submit</div>
-        <div id="repoAnswerBox"></div>
+      <!-- Ask bar (always visible at bottom) -->
+      <div class="ask-bar">
+        <button class="ask-bar-icon" onclick="openChat()" title="Ask ORACLE">
+          <span style="font-size:18px;">🔮</span>
+        </button>
+        <textarea id="repoQuestion" rows="1"
+          placeholder="Ask ORACLE a question about this vessel's manuals…"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();repoAsk();}"
+          onclick="openChat()"></textarea>
+        <button id="repoAskBtn" onclick="repoAsk()">ASK</button>
       </div>
     </div>
   </div>
@@ -289,6 +403,39 @@
     </div>
   </div>
 </div>
+
+<!-- Floating Chat Window -->
+<div id="oracleChatWindow" class="chat-window" style="display:none;">
+  <div class="chat-header">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:16px;">🔮</span>
+      <div>
+        <div style="font-family:var(--mono);font-size:10px;font-weight:700;color:var(--text-bright);letter-spacing:1px;">ORACLE</div>
+        <div id="chatScopeLabel" style="font-family:var(--mono);font-size:8px;color:var(--text-dim);">Technical Knowledge Assistant</div>
+      </div>
+    </div>
+    <button class="chat-close" onclick="closeChat()" title="Close">✕</button>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="chat-welcome">
+      <div style="font-size:28px;margin-bottom:10px;">🔮</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text-bright);font-weight:600;margin-bottom:6px;">ORACLE is ready</div>
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.6;">Select a vessel and category, then ask me anything about the technical manuals — oil change intervals, alarm setpoints, overhaul procedures, torque values and more.</div>
+    </div>
+  </div>
+  <div class="chat-input-area">
+    <div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:6px;" id="chatHint">Select a category to narrow the search · Shift+Enter for new line</div>
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <textarea id="chatInput" class="chat-textarea" rows="2"
+        placeholder="Ask a question…"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();repoAsk();}"></textarea>
+      <button id="repoAskBtn" class="chat-send-btn" onclick="repoAsk()">
+        <span style="font-size:14px;">➤</span>
+      </button>
+    </div>
+  </div>
+</div>
+<div id="chatBackdrop" class="chat-backdrop" onclick="closeChat()" style="display:none;"></div>
 
 <div id="toastEl"></div>
 
@@ -363,8 +510,155 @@ function toast(msg) {
   _toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3000);
 }
 
+// ── Vessel dropdown (replaces button-based selector) ──────────────
+function repoPickVesselFromDropdown(id) {
+  if (!id) return;
+  repoVesselId = id;
+  repoManuals = [];
+  repoCat = 'all';
+  repoConversation = [];
+  repoConvSources = '';
+  repoLoadManuals();
+  updateChatHint();
+}
+
+// Override loadRepoVessels to use dropdown instead of buttons
+async function loadRepoVessels() {
+  try {
+    var cu = getCurrentUser();
+    repoCanEdit = ['admin','superintendent','fleet_manager','deputy_fleet_manager'].includes(cu && cu.role)
+      || ['chief engineer','ce','c/e','master','captain'].includes(((cu && cu.designation)||'').toLowerCase().trim());
+    var btn = document.getElementById('repoUploadBtn');
+    if (btn) btn.innerHTML = repoCanEdit
+      ? '<button class="btn-sm btn-sm-primary" onclick="repoOpenUpload()" style="width:100%;">+ UPLOAD MANUAL</button>'
+      : '';
+    var res  = await fetch('/api/vessels', {headers:{'x-auth-token':getToken()}});
+    var list = await res.json();
+    var sel  = document.getElementById('repoVesselSelector');
+    if (!Array.isArray(list) || !list.length) {
+      if (sel) sel.innerHTML = '<option value="">No vessels assigned</option>';
+      return;
+    }
+    if (sel) {
+      sel.innerHTML = '<option value="">— Select vessel —</option>'
+        + list.map(function(v) { return '<option value="'+v.id+'">'+v.name+'</option>'; }).join('');
+    }
+    // Auto-select if only one vessel
+    if (list.length === 1) {
+      sel.value = list[0].id;
+      repoPickVesselFromDropdown(list[0].id);
+    }
+  } catch(e) {
+    var el = document.getElementById('repoContent');
+    if (el) el.innerHTML = '<div style="color:var(--red);font-family:var(--mono);font-size:11px;padding:20px;">Error: '+e.message+'</div>';
+  }
+}
+
+// ── Chat window ────────────────────────────────────────────────────
+function openChat() {
+  document.getElementById('oracleChatWindow').style.display = 'flex';
+  document.getElementById('chatBackdrop').style.display = 'block';
+  setTimeout(function() { document.getElementById('chatInput').focus(); }, 100);
+  updateChatHint();
+}
+
+function closeChat() {
+  document.getElementById('oracleChatWindow').style.display = 'none';
+  document.getElementById('chatBackdrop').style.display = 'none';
+}
+
+function updateChatHint() {
+  var hint = document.getElementById('chatHint');
+  var scope = document.getElementById('chatScopeLabel');
+  if (!hint) return;
+  var catName = '';
+  if (repoCat && repoCat !== 'all') {
+    var found = REPO_CATS.find(function(c) { return c.id === repoCat; });
+    catName = found ? found.label : repoCat;
+  }
+  var vesselSel = document.getElementById('repoVesselSelector');
+  var vesselName = vesselSel && vesselSel.selectedOptions && vesselSel.selectedOptions[0]
+    ? vesselSel.selectedOptions[0].text : '';
+  if (scope) scope.textContent = vesselName && vesselName !== '— Select vessel —'
+    ? vesselName + (catName ? ' · ' + catName : ' · All manuals')
+    : 'Technical Knowledge Assistant';
+  hint.textContent = catName
+    ? 'Searching in: ' + catName + ' · Shift+Enter for new line'
+    : 'Select a category to narrow the search · Shift+Enter for new line';
+}
+
+function appendUserBubble(text) {
+  var msgs = document.getElementById('chatMessages');
+  // Remove welcome if present
+  var welcome = msgs.querySelector('.chat-welcome');
+  if (welcome) welcome.remove();
+  var div = document.createElement('div');
+  div.className = 'chat-bubble-user';
+  div.innerHTML = '<div>' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function appendTypingIndicator() {
+  var msgs = document.getElementById('chatMessages');
+  var div = document.createElement('div');
+  div.className = 'chat-typing';
+  div.id = 'typingIndicator';
+  div.innerHTML = '<div class="avatar">🔮</div><div class="typing-dots"><span></span><span></span><span></span></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTypingIndicator() {
+  var el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function appendOracleBubble(rawAnswer, srcsHtml, isFollowUp) {
+  var msgs = document.getElementById('chatMessages');
+  var div = document.createElement('div');
+  div.className = 'chat-bubble-oracle';
+
+  var manualSection = '', insightSection = '';
+  var insightIdx = rawAnswer.indexOf('**TECHNICAL INSIGHT:**');
+  if (!isFollowUp && insightIdx > -1) {
+    manualSection  = rawAnswer.substring(0, insightIdx).replace('**MANUAL SAYS:**','').trim();
+    insightSection = rawAnswer.substring(insightIdx).replace('**TECHNICAL INSIGHT:**','').trim();
+  } else {
+    manualSection = rawAnswer.replace('**MANUAL SAYS:**','').replace('**TECHNICAL INSIGHT:**','').trim();
+  }
+
+  var bubbleHtml = '';
+  if (!isFollowUp && manualSection) {
+    bubbleHtml += '<div class="section-label"><span class="dot" style="background:var(--blue);"></span>MANUAL SAYS</div>';
+  }
+  bubbleHtml += '<div style="line-height:1.7;">' + fmtText(manualSection) + '</div>';
+  if (insightSection) {
+    bubbleHtml += '<div class="section-label" style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">'
+      + '<span class="dot" style="background:var(--amber);"></span>TECHNICAL INSIGHT</div>'
+      + '<div style="line-height:1.7;">' + fmtText(insightSection) + '</div>';
+  }
+  if (srcsHtml) {
+    bubbleHtml += '<div class="chat-sources">SOURCE: ' + srcsHtml + '</div>';
+  }
+
+  div.innerHTML = '<div class="avatar">🔮</div><div class="bubble">' + bubbleHtml + '</div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
 // ── Boot ──────────────────────────────────────────────────────────────
 if (getToken() && getCurrentUser()) initApp();
+
+// Keep ask bar and chat input in sync
+document.addEventListener('DOMContentLoaded', function() {
+  var askBar = document.getElementById('repoQuestion');
+  var chatIn  = document.getElementById('chatInput');
+  if (askBar && chatIn) {
+    askBar.addEventListener('input', function() { chatIn.value = askBar.value; });
+    chatIn.addEventListener('input', function() { askBar.value = chatIn.value; });
+  }
+});
 </script>
 
 <script>
@@ -481,7 +775,7 @@ function repoBuildSidebar() {
   if (catEl) catEl.innerHTML = html;
 }
 
-function repoSetCat(cat) { repoCat = cat; repoBuildSidebar(); repoRender(); }
+function repoSetCat(cat) { repoCat = cat; repoBuildSidebar(); repoRender(); updateChatHint(); }
 
 function repoRender() {
   var el = document.getElementById('repoContent');
@@ -765,18 +1059,26 @@ function repoClearConversation() {
 }
 
 async function repoAsk() {
-  var inp = document.getElementById('repoQuestion');
-  var q = (inp||{}).value;
-  if (!q || !q.trim()) return toast('Enter a question first');
-  if (!repoVesselId) return toast('Select a vessel first');
+  // Get question from either the ask bar or the chat input
+  var askBarInp = document.getElementById('repoQuestion');
+  var chatInp   = document.getElementById('chatInput');
+  var q = (chatInp && chatInp.value.trim()) || (askBarInp && askBarInp.value.trim());
+  if (!q) return toast('Enter a question first');
+  if (!repoVesselId) { openChat(); return toast('Select a vessel first'); }
+
+  // Open chat window and post user message
+  openChat();
+  if (chatInp)   chatInp.value = '';
+  if (askBarInp) askBarInp.value = '';
+
+  appendUserBubble(q);
+  appendTypingIndicator();
 
   var btn = document.getElementById('repoAskBtn');
-  if (btn) { btn.disabled=true; btn.textContent='...'; }
-  if (inp) inp.value = '';
+  if (btn) btn.disabled = true;
 
   var isFollowUp = repoConversation.length >= 2;
-  repoConversation.push({ role:'user', content: q.trim() });
-  repoRenderConversation();
+  repoConversation.push({ role:'user', content: q });
 
   try {
     var res = await fetch('/api/repo/search', {
@@ -784,7 +1086,7 @@ async function repoAsk() {
       headers: { 'Content-Type': 'application/json', 'x-auth-token': getToken() },
       body: JSON.stringify({
         vessel_id: repoVesselId, category: repoCat,
-        question: q.trim(),
+        question: q,
         history: repoConversation.slice(0, -1),
         is_follow_up: isFollowUp
       })
@@ -792,21 +1094,27 @@ async function repoAsk() {
     var data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Search failed');
 
+    var srcsHtml = '';
     if (!isFollowUp && data.sources && data.sources.length) {
       repoConvSources = data.sources.map(function(s) {
         return '<a href="/api/repo/manuals/'+s.id+'/file?token='+getToken()+'" target="_blank" '
-          + 'style="font-family:var(--mono);font-size:8px;color:#60a5fa;text-decoration:none;background:rgba(96,165,250,0.08);padding:2px 8px;border-radius:3px;border:1px solid rgba(96,165,250,0.2);">'
+          + 'style="color:var(--blue);font-size:8px;text-decoration:none;background:rgba(96,165,250,0.08);'
+          + 'padding:2px 8px;border-radius:3px;border:1px solid rgba(96,165,250,0.2);">'
           + s.filename + '</a>';
       }).join(' ');
+      srcsHtml = repoConvSources;
     }
 
-    repoConversation.push({ role:'assistant', content: data.answer || 'No answer returned' });
-    repoRenderConversation();
+    var answer = data.answer || 'No answer returned';
+    repoConversation.push({ role:'assistant', content: answer });
+    removeTypingIndicator();
+    appendOracleBubble(answer, srcsHtml, isFollowUp);
   } catch(e) {
+    removeTypingIndicator();
+    appendOracleBubble('⚠ ' + e.message, '', isFollowUp);
     repoConversation.push({ role:'assistant', content: '⚠ ' + e.message });
-    repoRenderConversation();
   }
-  if (btn) { btn.disabled=false; btn.textContent='ASK'; }
+  if (btn) btn.disabled = false;
 }
 
 // ── Re-extract text for existing manuals ─────────────────────────────
