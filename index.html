@@ -322,7 +322,7 @@ async function doLogin() {
   errEl.textContent = '';
   if (!email || !pwd) { errEl.textContent = 'Email and password required'; return; }
   try {
-    const res  = await _origFetch(API_BASE + '/api/login', {
+    const res  = await _origFetch(API_BASE + '/api/auth/login', {
       method: 'POST', headers: {'Content-Type':'application/json'},
       body: JSON.stringify({ email, password: pwd })
     });
