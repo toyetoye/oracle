@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FORCAP · ORACLE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #1c2230;
+    --border:   rgba(255,255,255,0.08);
+    --border-light: rgba(255,255,255,0.12);
+    --text:        #c9d1d9;
+    --text-bright: #f0f6fc;
+    --text-dim:    #6e7681;
+    --amber:    #f5a623;
+    --amber-glow: rgba(245,166,35,0.06);
+    --blue:     #60a5fa;
+    --green:    #3db87a;
+    --red:      #e05252;
+    --mono: 'JetBrains Mono', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 13px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* ── Top Bar ── */
+  .topbar {
+    height: 52px; background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 18px; gap: 14px; flex-shrink: 0; z-index: 100;
+  }
+  .topbar-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+  .topbar-logo-badge {
+    width: 32px; height: 32px; background: var(--amber); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px; font-weight: 700; color: #000; letter-spacing: -1px;
+  }
+  .topbar-title { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--text-bright); letter-spacing: 1px; }
+  .topbar-sub   { font-family: var(--mono); font-size: 8px; color: var(--text-dim); letter-spacing: 2px; }
+  .topbar-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .user-pill { font-family: var(--mono); font-size: 9px; color: var(--text-dim); background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; }
+  .signout-btn { font-family: var(--mono); font-size: 9px; color: var(--text-dim); background: none; border: 1px solid var(--border); border-radius: 4px; padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .signout-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── Login Screen ── */
+  #loginScreen {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    background: var(--bg); z-index: 999;
+  }
+  .login-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 40px 36px; width: 340px;
+  }
+  .login-logo { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--amber); letter-spacing: 1px; margin-bottom: 4px; }
+  .login-sub  { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 3px; margin-bottom: 28px; }
+  .login-field { margin-bottom: 14px; }
+  .login-field label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 2px; display: block; margin-bottom: 6px; }
+  .login-field input { width: 100%; background: var(--surface2); border: 1px solid var(--border-light); border-radius: 6px; padding: 10px 12px; color: var(--text-bright); font-size: 13px; outline: none; }
+  .login-field input:focus { border-color: var(--amber); }
+  .login-btn { width: 100%; background: var(--amber); color: #000; font-family: var(--mono); font-weight: 700; font-size: 12px; letter-spacing: 2px; border: none; border-radius: 6px; padding: 12px; cursor: pointer; margin-top: 8px; }
+  .login-btn:hover { background: #e09610; }
+  .login-error { font-family: var(--mono); font-size: 10px; color: var(--red); margin-top: 10px; min-height: 16px; }
+
+  /* ── Main Shell ── */
+  #appShell { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+
+  /* ── Vessel Bar ── */
+  .vessel-bar {
+    padding: 8px 18px; background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+  }
+  .vessel-bar-label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1.5px; }
+  #repoVesselSelector { display: flex; gap: 6px; flex-wrap: wrap; }
+  #repoUploadBtn { margin-left: auto; }
+  .vessel-sel-btn {
+    padding: 5px 14px; border-radius: 4px; border: 1px solid var(--border-light);
+    background: var(--surface2); color: var(--text-dim); font-family: var(--mono);
+    font-size: 10px; cursor: pointer; transition: all 0.12s;
+  }
+  .vessel-sel-btn:hover { border-color: var(--amber); color: var(--amber); }
+  .vessel-sel-btn.active { background: var(--amber); color: #000; border-color: var(--amber); font-weight: 700; }
+
+  /* ── Body Layout ── */
+  .oracle-body { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Sidebar ── */
+  .oracle-sidebar {
+    width: 210px; flex-shrink: 0; background: var(--surface);
+    border-right: 1px solid var(--border); overflow-y: auto; padding: 8px 0;
+  }
+  .sidebar-label { font-family: var(--mono); font-size: 8px; letter-spacing: 2px; color: var(--text-dim); padding: 10px 16px 6px; }
+  #repoCatList div { padding: 8px 16px; cursor: pointer; font-size: 12px; display: flex; align-items: center; gap: 8px; border-left: 3px solid transparent; color: var(--text-dim); }
+  #repoCatList div:hover { background: var(--surface2); color: var(--text); }
+  #repoCatList div.active { background: rgba(96,165,250,0.08); color: var(--blue); border-left-color: var(--blue); }
+
+  /* ── Content Area ── */
+  .oracle-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .content-toolbar {
+    padding: 10px 18px; background: var(--surface); border-bottom: 1px solid var(--border);
+    display: flex; gap: 10px; align-items: center;
+  }
+  .content-toolbar-info { flex: 1; }
+  #repoSectionTitle { font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--text-bright); }
+  #repoSectionCount { font-family: var(--mono); font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+  #repoFilterInput {
+    width: 200px; padding: 6px 10px; font-size: 12px;
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text);
+  }
+  #repoFilterInput:focus { outline: none; border-color: var(--blue); }
+  .sup-toggle { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); cursor: pointer; white-space: nowrap; }
+
+  #repoContent { flex: 1; overflow-y: auto; padding: 16px 18px; }
+
+  /* ── Q&A Panel ── */
+  .qa-panel {
+    border-top: 2px solid rgba(96,165,250,0.15); padding: 12px 18px;
+    flex-shrink: 0; background: var(--surface);
+  }
+  .qa-input-row { display: flex; gap: 8px; align-items: flex-start; }
+  #repoQuestion {
+    flex: 1; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; padding: 8px 12px; color: var(--text); font-size: 12px;
+    resize: none; font-family: inherit;
+  }
+  #repoQuestion:focus { outline: none; border-color: var(--blue); }
+  #repoAskBtn {
+    padding: 8px 18px; background: rgba(96,165,250,0.15); color: var(--blue);
+    border: 1px solid rgba(96,165,250,0.3); border-radius: 6px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700; cursor: pointer; flex-shrink: 0; height: 60px;
+  }
+  #repoAskBtn:hover { background: rgba(96,165,250,0.25); }
+  .qa-hint { font-family: var(--mono); font-size: 8px; color: var(--text-dim); margin-top: 4px; }
+  #repoAnswerBox {
+    display: none; margin-top: 10px; background: rgba(96,165,250,0.04);
+    border: 1px solid rgba(96,165,250,0.15); border-radius: 6px;
+    padding: 14px; max-height: 260px; overflow-y: auto; color: var(--text);
+  }
+
+  /* ── Modals ── */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 500; display: none; align-items: center; justify-content: center; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 28px; width: 520px; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--text-bright); letter-spacing: 2px; margin-bottom: 20px; }
+  .drop-zone { border: 2px dashed var(--border); border-radius: 8px; padding: 24px; text-align: center; cursor: pointer; margin-bottom: 14px; }
+  .drop-zone:hover { border-color: var(--blue); }
+  .fg { margin-bottom: 12px; }
+  .fg label { font-family: var(--mono); font-size: 9px; color: var(--text-dim); letter-spacing: 1.5px; display: block; margin-bottom: 5px; }
+  .fg input, .fg select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; padding: 7px 10px; color: var(--text); font-size: 12px; }
+  .fg input:focus, .fg select:focus { outline: none; border-color: var(--blue); }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .btn-ghost { background: none; border: 1px solid var(--border); color: var(--text-dim); padding: 7px 16px; border-radius: 6px; font-family: var(--mono); font-size: 10px; cursor: pointer; }
+  .btn-primary { background: var(--amber); color: #000; border: none; padding: 7px 16px; border-radius: 6px; font-family: var(--mono); font-size: 10px; font-weight: 700; cursor: pointer; }
+  .btn-sm { font-family: var(--mono); font-size: 9px; padding: 3px 8px; border-radius: 3px; cursor: pointer; border: 1px solid var(--border); background: var(--surface2); color: var(--text-dim); }
+  .btn-sm:hover { border-color: var(--blue); color: var(--blue); }
+  .btn-sm-primary { background: rgba(245,166,35,0.15); color: var(--amber); border: 1px solid rgba(245,166,35,0.3); }
+  .btn-sm-ghost { background: none; border: 1px solid var(--border); color: var(--text-dim); }
+  .prog-bar { height: 4px; background: var(--surface2); border-radius: 2px; margin: 8px 0; }
+  .prog-bar-fill { height: 100%; background: var(--amber); border-radius: 2px; width: 0%; transition: width 0.3s; }
+
+  /* ── Toast ── */
+  #toastEl { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px 18px; font-family: var(--mono); font-size: 11px; color: var(--text-bright); z-index: 9999; display: none; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">FORCAP</div>
+    <div class="login-sub">ORACLE · TECHNICAL KNOWLEDGE</div>
+    <div class="login-field"><label>EMAIL</label><input type="email" id="loginEmail" placeholder="your@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="login-field"><label>PASSWORD</label><input type="password" id="loginPwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="login-btn" onclick="doLogin()">SIGN IN</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-badge">FC</div>
+      <div>
+        <div class="topbar-title">FORCAP <span style="color:var(--amber);">·</span> ORACLE</div>
+        <div class="topbar-sub">TECHNICAL KNOWLEDGE BASE</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <span class="user-pill" id="userPill"></span>
+      <button class="signout-btn" onclick="doSignOut()">SIGN OUT</button>
+    </div>
+  </div>
+
+  <!-- Vessel Bar -->
+  <div class="vessel-bar">
+    <span class="vessel-bar-label">VESSEL</span>
+    <div id="repoVesselSelector"></div>
+    <div id="repoUploadBtn"></div>
+  </div>
+
+  <!-- Body -->
+  <div class="oracle-body">
+    <!-- Sidebar -->
+    <div class="oracle-sidebar">
+      <div class="sidebar-label">CATEGORIES</div>
+      <div id="repoCatList"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="oracle-content">
+      <div class="content-toolbar">
+        <div class="content-toolbar-info">
+          <div id="repoSectionTitle">ALL MANUALS</div>
+          <div id="repoSectionCount">Select a vessel above</div>
+        </div>
+        <input id="repoFilterInput" placeholder="Filter by name, maker, model" oninput="repoRender()">
+        <label class="sup-toggle">
+          <input type="checkbox" id="repoShowSuperseded" onchange="repoRender()"> Show superseded
+        </label>
+      </div>
+
+      <div id="repoContent">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);padding:20px;">Select a vessel to view manuals</div>
+      </div>
+
+      <!-- Q&A Panel -->
+      <div class="qa-panel">
+        <div class="qa-input-row">
+          <textarea id="repoQuestion" rows="2"
+            placeholder="Ask a question about this vessel's manuals… e.g. What is the oil change interval for the cargo compressor?"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();repoAsk();}"></textarea>
+          <button id="repoAskBtn" onclick="repoAsk()">ASK</button>
+        </div>
+        <div class="qa-hint">Select a category first to narrow the search · Enter to submit</div>
+        <div id="repoAnswerBox"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD MODAL -->
+<div class="modal-backdrop" id="manualUploadModal">
+  <div class="modal">
+    <div class="modal-title">UPLOAD MANUAL / DOCUMENT</div>
+    <div class="drop-zone" id="repoDropZone"
+      ondrop="repoHandleDrop(event)" ondragover="event.preventDefault()" onclick="document.getElementById('repoFileInput').click()">
+      <div style="font-size:28px;">📄</div>
+      <div style="font-size:13px;font-weight:600;color:var(--text-bright);margin-top:6px;">Drop PDF here or click to browse</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Max 50MB · PDF only · AI auto-categorises on upload</div>
+    </div>
+    <input type="file" id="repoFileInput" accept="application/pdf" style="display:none" onchange="repoFileSelected(this)">
+    <div id="repoFileChosen" style="display:none;font-family:var(--mono);font-size:10px;color:var(--green);margin-bottom:10px;"></div>
+    <div id="repoUploadProgress" style="display:none;">
+      <div id="repoUploadStatusMsg" style="font-family:var(--mono);font-size:9px;color:var(--amber);margin-bottom:5px;">Uploading and analysing with AI...</div>
+      <div class="prog-bar"><div class="prog-bar-fill" id="repoProgBar"></div></div>
+    </div>
+    <div id="repoUploadErr" style="color:var(--red);font-size:11px;display:none;margin-top:8px;"></div>
+    <div class="fg"><label>VERSION</label><input id="repoVersion" value="1.0" style="width:100px;"></div>
+    <div class="fg"><label>LINK TO EQUIPMENT (optional)</label><select id="repoEqLink"><option value="">Not linked</option></select></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('manualUploadModal')">CANCEL</button>
+      <button class="btn-primary" id="repoUploadSubmit" onclick="repoSubmitUpload()">UPLOAD &amp; ANALYSE</button>
+    </div>
+  </div>
+</div>
+
+<!-- SL MODAL -->
+<div class="modal-backdrop" id="repoSLModal">
+  <div class="modal" style="width:460px;">
+    <div class="modal-title">ADD SERVICE LETTER</div>
+    <input type="hidden" id="repoSLManualId">
+    <div class="fg"><label>REFERENCE NO. *</label><input id="repoSLRef" placeholder="e.g. SL-2024-042"></div>
+    <div class="fg"><label>TITLE</label><input id="repoSLTitle" placeholder="Brief description"></div>
+    <div class="fg"><label>DATE</label><input type="date" id="repoSLDate"></div>
+    <div class="fg"><label>ACTION REQUIRED</label>
+      <select id="repoSLAction">
+        <option value="for_information">For Information</option>
+        <option value="action_required">Action Required</option>
+        <option value="mandatory">Mandatory</option>
+      </select>
+    </div>
+    <div class="fg"><label>NOTES</label><input id="repoSLNotes" placeholder="Additional notes or findings"></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModal('repoSLModal')">CANCEL</button>
+      <button class="btn-primary" onclick="repoSaveSL()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastEl"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────
+const API_BASE = 'https://maride.onrender.com';
+
+// ── Auth helpers ─────────────────────────────────────────────────────
+function getToken()      { return localStorage.getItem('oracle_token') || ''; }
+function setToken(t)     { localStorage.setItem('oracle_token', t); }
+function getCurrentUser(){ try { return JSON.parse(localStorage.getItem('oracle_user') || 'null'); } catch(e){ return null; } }
+function setUser(u)      { localStorage.setItem('oracle_user', JSON.stringify(u)); }
+function clearAuth()     { localStorage.removeItem('oracle_token'); localStorage.removeItem('oracle_user'); }
+
+// ── Fetch interceptor — route all /api/ calls to MARIDE backend ──────
+const _origFetch = window.fetch.bind(window);
+window.fetch = function(url, opts) {
+  if (typeof url === 'string' && url.startsWith('/api/')) {
+    url = API_BASE + url;
+    opts = opts || {};
+    opts.headers = Object.assign({'x-auth-token': getToken()}, opts.headers || {});
+  }
+  return _origFetch(url, opts);
+};
+
+// ── Login / Auth ──────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if (!email || !pwd) { errEl.textContent = 'Email and password required'; return; }
+  try {
+    const res  = await _origFetch(API_BASE + '/api/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ email, password: pwd })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Login failed');
+    setToken(data.token);
+    setUser(data.user);
+    initApp();
+  } catch(e) { errEl.textContent = e.message; }
+}
+
+function doSignOut() {
+  clearAuth();
+  document.getElementById('appShell').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('loginPwd').value = '';
+}
+
+function initApp() {
+  const user = getCurrentUser();
+  if (!user) return;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
+  document.getElementById('userPill').textContent = (user.name || user.email) + ' · ' + (user.role || '').toUpperCase();
+  loadRepoVessels();
+}
+
+// ── Modal helpers ─────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id)?.classList.remove('open'); }
+
+// ── Toast ─────────────────────────────────────────────────────────────
+let _toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toastEl');
+  if (!el) return;
+  el.textContent = msg; el.style.display = 'block';
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────
+if (getToken() && getCurrentUser()) initApp();
+</script>
+
+<script>
+// ── ORACLE Knowledge Repository Module ───────────────────────────────
+// KNOWLEDGE REPOSITORY MODULE
+var REPO_CATS = [
+  {id:'all',label:'All Manuals',icon:'📚'},
+  {id:'Main Engine',label:'Main Engine',icon:'⚙️'},
+  {id:'Auxiliary Engine',label:'Auxiliary Engine',icon:'🔧'},
+  {id:'Cargo System',label:'Cargo System',icon:'🛢️'},
+  {id:'IGS/Inert Gas',label:'IGS / Inert Gas',icon:'💨'},
+  {id:'Cargo Compressors',label:'Cargo Compressors',icon:'🔄'},
+  {id:'Pumps',label:'Pumps',icon:'💧'},
+  {id:'Electrical',label:'Electrical',icon:'⚡'},
+  {id:'Safety Systems',label:'Safety Systems',icon:'🛡️'},
+  {id:'Fire Fighting',label:'Fire Fighting',icon:'🚒'},
+  {id:'Navigation',label:'Navigation',icon:'🧭'},
+  {id:'Boiler',label:'Boiler',icon:'🔥'},
+  {id:'Purifier',label:'Purifier',icon:'🔬'},
+  {id:'HVAC',label:'HVAC',icon:'❄️'},
+  {id:'Mooring',label:'Mooring',icon:'⚓'},
+  {id:'Crane/Deck Machinery',label:'Deck Machinery',icon:'🏗️'},
+  {id:'Regulatory/SIRE',label:'Regulatory / SIRE',icon:'📋'},
+  {id:'OEM Service Letter',label:'OEM Service Letters',icon:'📬'},
+  {id:'Maker Bulletin',label:'Maker Bulletins',icon:'📣'},
+  {id:'SMS Procedure',label:'SMS Procedures',icon:'📑'},
+  {id:'General',label:'General',icon:'📄'},
+];
+
+var repoVesselId  = null;
+var repoManuals   = [];
+var repoCat       = 'all';
+var repoCanEdit   = false;
+var repoPendingFile = null;
+
+async function loadRepoVessels() {
+  try {
+    var cu = getCurrentUser();
+    repoCanEdit = ['admin','superintendent','fleet_manager','deputy_fleet_manager'].includes(cu && cu.role)
+      || ['chief engineer','ce','c/e','master','captain'].includes(((cu && cu.designation)||'').toLowerCase().trim());
+    var btn = document.getElementById('repoUploadBtn');
+    if (btn) btn.innerHTML = repoCanEdit ? '<button class="btn-sm btn-sm-primary" onclick="repoOpenUpload()">+ UPLOAD MANUAL</button>' : '';
+    var res  = await fetch('/api/vessels', {headers:{'x-auth-token':getToken()}});
+    var list = await res.json();
+    var sel  = document.getElementById('repoVesselSelector');
+    if (!Array.isArray(list) || !list.length) {
+      if (sel) sel.innerHTML = '<span style="font-family:var(--mono);font-size:10px;color:var(--text-dim);">No vessels assigned</span>';
+      var el = document.getElementById('repoContent');
+      if (el) el.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);padding:20px;">No vessels assigned.</div>';
+      return;
+    }
+    if (sel) {
+      sel.innerHTML = '';
+      list.forEach(function(v, i) {
+        var b = document.createElement('button');
+        b.className = 'vessel-sel-btn' + (i === 0 ? ' active' : '');
+        b.textContent = v.name;
+        b.onclick = function() { repoPickVessel(v.id, b); };
+        sel.appendChild(b);
+      });
+    }
+    repoPickVessel(list[0].id, sel ? sel.querySelector('.vessel-sel-btn.active') : null);
+  } catch(e) {
+    var el = document.getElementById('repoContent');
+    if (el) el.innerHTML = '<div style="color:var(--red);font-family:var(--mono);font-size:11px;padding:20px;">Error: ' + e.message + '</div>';
+  }
+}
+
+async function repoPickVessel(id, btn) {
+  repoVesselId = id;
+  document.querySelectorAll('#repoVesselSelector .vessel-sel-btn').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  repoCat = 'all';
+  await repoLoadManuals();
+}
+
+async function repoLoadManuals() {
+  var el = document.getElementById('repoContent');
+  if (el) el.innerHTML = '<div style="font-family:var(--mono);font-size:11px;color:var(--amber);padding:20px;">Loading...</div>';
+  try {
+    var res  = await fetch('/api/repo/manuals?vessel_id=' + repoVesselId, {headers:{'x-auth-token':getToken()}});
+    repoManuals = await res.json();
+    if (!Array.isArray(repoManuals)) repoManuals = [];
+    repoBuildSidebar();
+    repoRender();
+    try {
+      var eqRes = await fetch('/api/custodian/equipment?vessel_id=' + repoVesselId, {headers:{'x-auth-token':getToken()}});
+      var eq = await eqRes.json();
+      var eqSel = document.getElementById('repoEqLink');
+      if (eqSel && Array.isArray(eq)) {
+        eqSel.innerHTML = '<option value="">Not linked</option>' + eq.map(function(e) {
+          return '<option value="' + e.id + '">' + e.name + '</option>';
+        }).join('');
+      }
+    } catch(e2) {}
+  } catch(e) {
+    var el2 = document.getElementById('repoContent');
+    if (el2) el2.innerHTML = '<div style="color:var(--red);font-family:var(--mono);font-size:11px;padding:20px;">Error: ' + e.message + '</div>';
+  }
+}
+
+function repoBuildSidebar() {
+  var counts = {};
+  repoManuals.forEach(function(m) { counts[m.category] = (counts[m.category]||0) + 1; });
+  var html = REPO_CATS.filter(function(c) { return c.id==='all' || counts[c.id]; }).map(function(c) {
+    var n = c.id==='all' ? repoManuals.length : (counts[c.id]||0);
+    var active = repoCat === c.id;
+    var st = active ? 'background:rgba(96,165,250,0.08);color:#60a5fa;border-left:3px solid #60a5fa;' : 'color:var(--text-dim);border-left:3px solid transparent;';
+    return '<div style="padding:8px 16px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:8px;'+st+'" onclick="repoSetCat(\''+c.id+'\')">'
+      +'<span>'+c.icon+'</span><span style="flex:1;">'+c.label+'</span>'
+      +'<span style="font-family:var(--mono);font-size:9px;background:var(--surface2);padding:1px 5px;border-radius:8px;">'+n+'</span></div>';
+  }).join('');
+  var catEl = document.getElementById('repoCatList');
+  if (catEl) catEl.innerHTML = html;
+}
+
+function repoSetCat(cat) { repoCat = cat; repoBuildSidebar(); repoRender(); }
+
+function repoRender() {
+  var el = document.getElementById('repoContent');
+  if (!el) return;
+  var filter  = ((document.getElementById('repoFilterInput')||{}).value||'').toLowerCase();
+  var showSup = (document.getElementById('repoShowSuperseded')||{}).checked;
+  var list = repoManuals.slice();
+  if (repoCat !== 'all') list = list.filter(function(m) { return m.category===repoCat; });
+  if (!showSup) list = list.filter(function(m) { return !m.superseded; });
+  if (filter) list = list.filter(function(m) {
+    return (m.filename||'').toLowerCase().indexOf(filter)>=0 || (m.maker||'').toLowerCase().indexOf(filter)>=0
+      || (m.model||'').toLowerCase().indexOf(filter)>=0 || (m.equipment_name||'').toLowerCase().indexOf(filter)>=0;
+  });
+  var cat = REPO_CATS.find(function(c){ return c.id===repoCat; });
+  var titleEl = document.getElementById('repoSectionTitle');
+  var countEl = document.getElementById('repoSectionCount');
+  if (titleEl) titleEl.textContent = ((cat&&cat.label)||'All Manuals').toUpperCase();
+  if (countEl) countEl.textContent = list.length + ' document'+(list.length!==1?'s':'')+(filter?' matching filter':'');
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:50px 20px;">'
+      +'<div style="font-size:40px;margin-bottom:14px;">📂</div>'
+      +'<div style="font-family:var(--mono);font-size:11px;color:var(--text-dim);">'
+      +(filter?'No manuals match your filter':repoCat==='all'?'No manuals uploaded yet for this vessel':'No manuals in this category')+'</div>'
+      +(repoCanEdit&&!filter?'<button class="btn-sm btn-sm-primary" style="margin-top:14px;" onclick="repoOpenUpload()">+ Upload First Manual</button>':'')
+      +'</div>';
+    return;
+  }
+  el.innerHTML = list.map(function(m) {
+    var sire = (m.sire_chapters||[]).map(function(c){
+      return '<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;color:#c084fc;background:rgba(192,132,252,0.08);">SIRE CH.'+c+'</span>';
+    }).join('');
+    var sls = m.service_letters||[];
+    var actionSL = sls.filter(function(s){return s.action!=='for_information';}).length;
+    // Extract button: admin/superintendent only
+    var cu = getCurrentUser();
+    var extractBtn = (cu && (cu.role==='admin' || cu.role==='superintendent'))
+      ? '<button class="btn-sm btn-sm-ghost" style="font-size:9px;color:'+(m.text_extracted?'var(--text-dim)':'var(--amber)')+';" onclick="repoReExtract(\''+m.id+'\',this)" title="'+(m.text_extracted?'Re-extract text':'Extract text for Q&A')+'">⚙ '+(m.text_extracted?'Re-extract':'Extract')+'</button>'
+      : '';
+    var adminBtns = repoCanEdit
+      ? extractBtn
+        +'<button class="btn-sm btn-sm-ghost" style="font-size:9px;color:#60a5fa;" onclick="repoSearchOEMSL(\''+m.id+'\',this)" title="Search OEM for service letters">🔍 Find SL</button>'
+        +'<button class="btn-sm btn-sm-ghost" style="font-size:9px;" onclick="repoAddSL(\''+m.id+'\')" >+ SL</button>'
+        +'<button class="btn-sm btn-sm-ghost" style="font-size:9px;" onclick="repoToggleSuperseded(\''+m.id+'\','+(!m.superseded)+')">'+( m.superseded?'Restore':'Supersede')+'</button>'
+        +'<button class="btn-sm btn-sm-ghost" style="font-size:9px;color:var(--red);" onclick="repoDelete(\''+m.id+'\')" >Del</button>'
+      : '';
+    var slHtml = sls.length ? '<div style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px;">'
+      +'<div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-bottom:5px;letter-spacing:1px;">SERVICE LETTERS</div>'
+      +sls.map(function(sl){
+        var ac = sl.action==='mandatory'?'var(--red)':sl.action==='action_required'?'var(--amber)':'var(--text-dim)';
+        var al = sl.action==='mandatory'?'MANDATORY':sl.action==='action_required'?'ACTION REQ.':'FOR INFO';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.04);">'
+          +'<div style="flex:1;"><span style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--text-bright);">'+(sl.ref||'—')+'</span>'
+          +' <span style="font-size:10px;color:var(--text);">'+(sl.title||'')+'</span>'
+          +(sl.date?'<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-left:6px;">'+sl.date+'</span>':'')+'</div>'
+          +'<span style="font-family:var(--mono);font-size:8px;color:'+ac+';">'+al+'</span>'
+          +(repoCanEdit?'<button onclick="repoDeleteSL(\''+m.id+'\',\''+sl.id+'\')" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:10px;padding:0 4px;" title="Delete">✕</button>':'')
+          +'</div>';
+      }).join('')+'</div>' : '';
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-bottom:10px;'+(m.superseded?'opacity:0.5;':'')+'">'
+      +'<div style="display:flex;gap:14px;align-items:flex-start;">'
+        +'<div style="width:34px;height:42px;background:rgba(224,82,82,0.1);border:1px solid rgba(224,82,82,0.2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">📄</div>'
+        +'<div style="flex:1;min-width:0;">'
+          +'<div style="font-size:13px;font-weight:600;color:var(--text-bright);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="'+m.filename+'">'+m.filename+'</div>'
+          +'<div style="font-size:11px;color:var(--text-dim);margin:2px 0 6px;">'+(m.summary||'—')+'</div>'
+          +'<div style="display:flex;gap:5px;flex-wrap:wrap;">'
+            +'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:var(--surface2);color:var(--text-dim);">'+m.category+'</span>'
+            +(m.maker?'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;color:#60a5fa;background:rgba(96,165,250,0.08);">'+m.maker+(m.model?' · '+m.model:'')+'</span>':'')
+            +(m.equipment_name?'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;color:var(--green);background:rgba(61,184,122,0.08);">'+m.equipment_name+'</span>':'')
+            +(m.rev_date?'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;background:var(--surface2);color:var(--text-dim);">Rev: '+m.rev_date+'</span>':'')
+            +(m.version?'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;color:var(--green);background:rgba(61,184,122,0.08);">v'+m.version+'</span>':'')
+            +sire
+            +(m.superseded?'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;color:var(--amber);background:rgba(245,166,35,0.08);">SUPERSEDED</span>':'')
+            +(m.text_extracted?'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;color:#34d399;background:rgba(52,211,153,0.08);" title="Text extracted — Q&A ready">Q&A ✓</span>':'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;color:var(--text-dim);background:var(--surface2);">No text</span>')
+            +(sls.length?'<span style="font-family:var(--mono);font-size:8px;padding:2px 6px;border-radius:3px;color:'+(actionSL?'var(--amber)':'var(--text-dim)')+';background:var(--surface2);">'+(actionSL?'! ':'')+sls.length+' SL</span>':'')
+          +'</div>'
+          +'<div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:6px;">'
+            +(m.uploaded_by||'—')+' · '+(m.uploaded_at||'').substring(0,10)
+            +(m.size_bytes?' · '+(m.size_bytes/1048576).toFixed(1)+' MB':'')
+          +'</div>'
+        +'</div>'
+        +'<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">'
+          +'<a href="/api/repo/manuals/'+m.id+'/file?token='+getToken()+'" target="_blank" '
+            +'style="font-family:var(--mono);font-size:9px;padding:4px 10px;background:rgba(96,165,250,0.1);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);border-radius:4px;text-decoration:none;text-align:center;">VIEW</a>'
+          +adminBtns
+        +'</div>'
+      +'</div>'
+      +slHtml
+      +'<div id="oemResults_'+m.id+'" style="display:none;margin-top:4px;"></div>'
+    +'</div>';
+  }).join('');
+}
+
+// ── OEM Service Letter Search ─────────────────────────────────────────
+async function repoSearchOEMSL(id, btn) {
+  var m = repoManuals.find(function(x){ return x.id===id; });
+  if (!m) return;
+  if (!m.maker && !m.equipment_name) return toast('Add maker/equipment name to this manual first');
+  var panel = document.getElementById('oemResults_'+id);
+  if (!panel) return;
+  if (btn) { btn.disabled=true; btn.textContent='🔍 Searching...'; }
+  panel.style.display = 'block';
+  panel.innerHTML = '<div style="font-family:var(--mono);font-size:10px;color:var(--amber);padding:10px 0;">Searching OEM sources'+(m.maker?' for '+m.maker:'')+'...</div>';
+  try {
+    var res = await fetch('/api/repo/manuals/'+id+'/search-sl', {method:'POST', headers:{'x-auth-token':getToken()}});
+    var data = await res.json();
+    if (data.message && !(data.results&&data.results.length)) {
+      panel.innerHTML = '<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);padding:8px 0;">'+data.message+'</div>';
+    } else if (!data.results||!data.results.length) {
+      panel.innerHTML = '<div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);padding:8px 0;">No service letters found online for this equipment.</div>';
+    } else {
+      var ac = {mandatory:'var(--red)',action_required:'var(--amber)',for_information:'var(--text-dim)'};
+      var al = {mandatory:'MANDATORY',action_required:'ACTION REQ.',for_information:'FOR INFO'};
+      panel.innerHTML = '<div style="border-top:1px solid var(--border);padding-top:10px;margin-top:4px;">'
+        +'<div style="font-family:var(--mono);font-size:8px;color:#60a5fa;letter-spacing:1px;margin-bottom:8px;">🔍 FOUND ONLINE — '+data.results.length+' SERVICE LETTER(S)</div>'
+        +data.results.map(function(sl){
+          var c=ac[sl.action]||'var(--text-dim)', l=al[sl.action]||sl.action;
+          return '<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 12px;margin-bottom:6px;">'
+            +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">'
+              +'<span style="font-family:var(--mono);font-size:9px;font-weight:700;color:var(--text-bright);">'+(sl.ref||'—')+'</span>'
+              +'<span style="font-family:var(--mono);font-size:8px;color:'+c+';">'+l+'</span>'
+              +(sl.date?'<span style="font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-left:auto;">'+sl.date+'</span>':'')
+            +'</div>'
+            +'<div style="font-size:11px;color:var(--text-bright);margin-bottom:4px;">'+(sl.title||'')+'</div>'
+            +(sl.summary?'<div style="font-size:10px;color:var(--text-dim);">'+sl.summary+'</div>':'')
+            +(sl.url?'<a href="'+sl.url+'" target="_blank" style="font-family:var(--mono);font-size:8px;color:#60a5fa;text-decoration:none;display:inline-block;margin-top:6px;">View Source →</a>':'')
+            +(repoCanEdit?'<button onclick="repoAddFoundSL(\''+id+'\',\''+encodeURIComponent(JSON.stringify(sl))+'\')" '
+              +'style="font-family:var(--mono);font-size:8px;padding:3px 8px;background:rgba(96,165,250,0.1);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);border-radius:3px;cursor:pointer;margin-left:8px;margin-top:6px;">+ Add to Manual</button>':'')
+          +'</div>';
+        }).join('')+'</div>';
+    }
+  } catch(e) {
+    panel.innerHTML = '<div style="color:var(--red);font-family:var(--mono);font-size:10px;padding:8px 0;">Search failed: '+e.message+'</div>';
+  }
+  if (btn) { btn.disabled=false; btn.textContent='🔍 Find SL'; }
+}
+
+async function repoAddFoundSL(manualId, slEncoded) {
+  try {
+    var sl = JSON.parse(decodeURIComponent(slEncoded));
+    var m  = repoManuals.find(function(x){ return x.id===manualId; });
+    if (!m) return;
+    var newSL = { id:'sl_'+Date.now().toString(36), ref:sl.ref||'', title:sl.title||'', date:sl.date||'', action:sl.action||'for_information', notes:(sl.summary||'')+(sl.url?'\nSource: '+sl.url:'') };
+    await fetch('/api/repo/manuals/'+manualId, { method:'PATCH', headers:{'Content-Type':'application/json','x-auth-token':getToken()}, body:JSON.stringify({service_letters:(m.service_letters||[]).concat([newSL])}) });
+    toast('Service letter added: '+(newSL.ref||newSL.title));
+    repoLoadManuals();
+  } catch(e) { toast('Error: '+e.message); }
+}
+
+// ── Upload ────────────────────────────────────────────────────────────
+function repoOpenUpload() {
+  repoPendingFile = null;
+  document.getElementById('repoFileChosen').style.display = 'none';
+  document.getElementById('repoUploadProgress').style.display = 'none';
+  document.getElementById('repoUploadErr').style.display = 'none';
+  document.getElementById('repoVersion').value = '1.0';
+  document.getElementById('manualUploadModal').classList.add('open');
+}
+function repoHandleDrop(e) { e.preventDefault(); var f=e.dataTransfer&&e.dataTransfer.files[0]; if(f&&f.type==='application/pdf') repoSetFile(f); else toast('PDF files only'); }
+function repoFileSelected(inp) { if(inp.files&&inp.files[0]) repoSetFile(inp.files[0]); }
+function repoSetFile(f) { repoPendingFile=f; var el=document.getElementById('repoFileChosen'); el.textContent='Selected: '+f.name+' ('+(f.size/1048576).toFixed(1)+' MB)'; el.style.display='block'; }
+
+async function repoSubmitUpload() {
+  if (!repoPendingFile) return toast('Select a PDF first');
+  if (!repoVesselId)    return toast('Select a vessel first');
+  var prog=document.getElementById('repoUploadProgress'), bar=document.getElementById('repoProgBar');
+  var err=document.getElementById('repoUploadErr'), btn=document.getElementById('repoUploadSubmit');
+  var msg=document.getElementById('repoUploadStatusMsg');
+  prog.style.display='block'; err.style.display='none'; btn.disabled=true;
+  var p=0;
+  var t=setInterval(function(){ p=Math.min(p+(p<60?5:p<85?1.5:0.3),92); bar.style.width=p+'%'; if(msg) msg.textContent=p<30?'Uploading...':p<70?'AI analysing document...':'Categorising...'; },500);
+  try {
+    var fd=new FormData();
+    fd.append('file',repoPendingFile); fd.append('vessel_id',repoVesselId);
+    fd.append('version',document.getElementById('repoVersion').value||'1.0');
+    fd.append('equipment_id',document.getElementById('repoEqLink').value||'');
+    var res=await fetch('/api/repo/upload',{method:'POST',headers:{'x-auth-token':getToken()},body:fd});
+    var data=await res.json();
+    if (!res.ok) throw new Error(data.error||'Upload failed');
+    clearInterval(t); bar.style.width='100%';
+    setTimeout(function(){ closeModal('manualUploadModal'); toast('Uploaded: '+data.filename+' — '+data.category); repoLoadManuals(); },400);
+  } catch(e) {
+    clearInterval(t); prog.style.display='none'; bar.style.width='0%'; err.textContent=e.message; err.style.display='block'; btn.disabled=false;
+  }
+}
+
+// ── Manual actions ────────────────────────────────────────────────────
+async function repoToggleSuperseded(id,val) { await fetch('/api/repo/manuals/'+id,{method:'PATCH',headers:{'Content-Type':'application/json','x-auth-token':getToken()},body:JSON.stringify({superseded:val})}); repoLoadManuals(); toast(val?'Marked as superseded':'Restored'); }
+async function repoDelete(id) { var m=repoManuals.find(function(x){return x.id===id;}); if(!confirm('Delete '+(m?m.filename:'this manual')+'?\nThis cannot be undone.')) return; await fetch('/api/repo/manuals/'+id,{method:'DELETE',headers:{'x-auth-token':getToken()}}); repoLoadManuals(); toast('Manual deleted'); }
+async function repoDeleteSL(manualId,slId) { var m=repoManuals.find(function(x){return x.id===manualId;}); if(!m) return; await fetch('/api/repo/manuals/'+manualId,{method:'PATCH',headers:{'Content-Type':'application/json','x-auth-token':getToken()},body:JSON.stringify({service_letters:(m.service_letters||[]).filter(function(s){return s.id!==slId;})})}); repoLoadManuals(); toast('Service letter removed'); }
+
+function repoAddSL(id) {
+  document.getElementById('repoSLManualId').value=id;
+  ['repoSLRef','repoSLTitle','repoSLNotes'].forEach(function(i){document.getElementById(i).value='';});
+  document.getElementById('repoSLDate').value=new Date().toISOString().substring(0,10);
+  document.getElementById('repoSLAction').value='for_information';
+  document.getElementById('repoSLModal').classList.add('open');
+}
+
+async function repoSaveSL() {
+  var id=document.getElementById('repoSLManualId').value;
+  var m=repoManuals.find(function(x){return x.id===id;}); if(!m) return;
+  var sl={id:'sl_'+Date.now().toString(36),ref:document.getElementById('repoSLRef').value.trim(),title:document.getElementById('repoSLTitle').value.trim(),date:document.getElementById('repoSLDate').value,action:document.getElementById('repoSLAction').value,notes:document.getElementById('repoSLNotes').value.trim()};
+  if (!sl.ref) return toast('Reference number required');
+  await fetch('/api/repo/manuals/'+id,{method:'PATCH',headers:{'Content-Type':'application/json','x-auth-token':getToken()},body:JSON.stringify({service_letters:(m.service_letters||[]).concat([sl])})});
+  closeModal('repoSLModal'); repoLoadManuals(); toast('Service letter added');
+}
+
+// ── Q&A Conversation ─────────────────────────────────────────────────
+var repoConversation = [];
+var repoConvSources  = '';
+
+function fmtText(t) {
+  return (t||'')
+    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:var(--text-bright);">$1</strong>')
+    .replace(/^(\d+)\. (.+)$/gm, '<div style="display:flex;gap:8px;margin:3px 0;"><span style="font-family:var(--mono);font-size:10px;color:var(--amber);min-width:18px;">$1.</span><span>$2</span></div>')
+    .replace(/^[-•] (.+)$/gm, '<div style="display:flex;gap:8px;margin:3px 0;"><span style="color:var(--amber);min-width:12px;">•</span><span>$1</span></div>')
+    .split('\n\n').join('<div style="height:7px;"></div>')
+    .split('\n').join('<br>');
+}
+
+function repoBuildAnswerHtml(rawAnswer, srcsHtml, isFollowUp) {
+  var manualSection = '', insightSection = '';
+  var insightIdx = rawAnswer.indexOf('**TECHNICAL INSIGHT:**');
+  if (!isFollowUp && insightIdx > -1) {
+    manualSection  = rawAnswer.substring(0, insightIdx).replace('**MANUAL SAYS:**','').trim();
+    insightSection = rawAnswer.substring(insightIdx).replace('**TECHNICAL INSIGHT:**','').trim();
+  } else {
+    manualSection = rawAnswer.replace('**MANUAL SAYS:**','').replace('**TECHNICAL INSIGHT:**','').trim();
+  }
+  var html = '';
+  if (!isFollowUp) {
+    html += '<div style="margin-bottom:12px;">'
+      + '<div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:1.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">'
+      + '<span style="display:inline-block;width:8px;height:8px;background:#60a5fa;border-radius:50%;"></span>MANUAL SAYS</div>'
+      + '<div style="font-size:12px;line-height:1.7;border-left:2px solid rgba(96,165,250,0.3);padding-left:12px;">' + fmtText(manualSection) + '</div>'
+      + '</div>';
+    if (insightSection) {
+      html += '<div style="margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">'
+        + '<div style="font-family:var(--mono);font-size:8px;color:var(--text-dim);letter-spacing:1.5px;margin-bottom:8px;display:flex;align-items:center;gap:6px;">'
+        + '<span style="display:inline-block;width:8px;height:8px;background:var(--amber);border-radius:50%;"></span>TECHNICAL INSIGHT</div>'
+        + '<div style="font-size:12px;line-height:1.7;border-left:2px solid rgba(245,166,35,0.3);padding-left:12px;">' + fmtText(insightSection) + '</div>'
+        + '</div>';
+    }
+  } else {
+    html += '<div style="font-size:12px;line-height:1.7;border-left:2px solid rgba(61,184,122,0.35);padding-left:12px;">' + fmtText(manualSection) + '</div>';
+  }
+  if (srcsHtml) html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(96,165,250,0.08);font-family:var(--mono);font-size:8px;color:var(--text-dim);">SOURCE: ' + srcsHtml + '</div>';
+  return html;
+}
+
+function repoRenderConversation() {
+  var ansBox = document.getElementById('repoAnswerBox');
+  if (!ansBox) return;
+  if (!repoConversation.length) { ansBox.style.display='none'; return; }
+  var html = '';
+  repoConversation.forEach(function(turn, i) {
+    if (turn.role === 'user') {
+      html += '<div style="display:flex;justify-content:flex-end;margin-bottom:10px;">'
+        + '<div style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.2);border-radius:10px 10px 2px 10px;padding:8px 14px;max-width:80%;font-size:12px;color:var(--text-bright);">'
+        + turn.content + '</div></div>';
+    } else {
+      var isFollowUp = i > 1;
+      var srcs = isFollowUp ? '' : repoConvSources;
+      html += '<div style="margin-bottom:16px;">' + repoBuildAnswerHtml(turn.content, srcs, isFollowUp) + '</div>';
+    }
+  });
+  html += '<div style="text-align:right;margin-top:4px;">'
+    + '<button onclick="repoClearConversation()" style="font-family:var(--mono);font-size:8px;color:var(--text-dim);background:none;border:none;cursor:pointer;">✕ clear</button>'
+    + '</div>';
+  ansBox.innerHTML = html;
+  ansBox.style.display = 'block';
+  ansBox.scrollTop = ansBox.scrollHeight;
+}
+
+function repoClearConversation() {
+  repoConversation = []; repoConvSources = '';
+  var ansBox = document.getElementById('repoAnswerBox');
+  if (ansBox) { ansBox.style.display='none'; ansBox.innerHTML=''; }
+  var inp = document.getElementById('repoQuestion');
+  if (inp) inp.value = '';
+}
+
+async function repoAsk() {
+  var inp = document.getElementById('repoQuestion');
+  var q = (inp||{}).value;
+  if (!q || !q.trim()) return toast('Enter a question first');
+  if (!repoVesselId) return toast('Select a vessel first');
+
+  var btn = document.getElementById('repoAskBtn');
+  if (btn) { btn.disabled=true; btn.textContent='...'; }
+  if (inp) inp.value = '';
+
+  var isFollowUp = repoConversation.length >= 2;
+  repoConversation.push({ role:'user', content: q.trim() });
+  repoRenderConversation();
+
+  try {
+    var res = await fetch('/api/repo/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-auth-token': getToken() },
+      body: JSON.stringify({
+        vessel_id: repoVesselId, category: repoCat,
+        question: q.trim(),
+        history: repoConversation.slice(0, -1),
+        is_follow_up: isFollowUp
+      })
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Search failed');
+
+    if (!isFollowUp && data.sources && data.sources.length) {
+      repoConvSources = data.sources.map(function(s) {
+        return '<a href="/api/repo/manuals/'+s.id+'/file?token='+getToken()+'" target="_blank" '
+          + 'style="font-family:var(--mono);font-size:8px;color:#60a5fa;text-decoration:none;background:rgba(96,165,250,0.08);padding:2px 8px;border-radius:3px;border:1px solid rgba(96,165,250,0.2);">'
+          + s.filename + '</a>';
+      }).join(' ');
+    }
+
+    repoConversation.push({ role:'assistant', content: data.answer || 'No answer returned' });
+    repoRenderConversation();
+  } catch(e) {
+    repoConversation.push({ role:'assistant', content: '⚠ ' + e.message });
+    repoRenderConversation();
+  }
+  if (btn) { btn.disabled=false; btn.textContent='ASK'; }
+}
+
+// ── Re-extract text for existing manuals ─────────────────────────────
+async function repoReExtract(id, btn) {
+  if (btn) { btn.disabled=true; btn.textContent='⏳ Extracting...'; }
+  try {
+    var res = await fetch('/api/repo/manuals/'+id+'/reextract', {
+      method: 'POST', headers: {'x-auth-token': getToken()}
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    var m = repoManuals.find(function(x){ return x.id===id; });
+    toast('Extracting text for ' + (m ? m.filename : 'manual') + ' — Q&A ready in ~30 seconds');
+    setTimeout(function() { repoLoadManuals(); }, 35000);
+  } catch(e) {
+    toast('Error: ' + e.message);
+    if (btn) { btn.disabled=false; btn.textContent='⚙ Extract'; }
+  }
+}
+</script>
+</body>
+</html>
