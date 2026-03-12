@@ -925,13 +925,39 @@ async function repoAddFoundSL(manualId, slEncoded) {
 }
 
 // ── Upload ────────────────────────────────────────────────────────────
-function repoOpenUpload() {
+async function repoOpenUpload() {
   repoPendingFile = null;
   document.getElementById('repoFileChosen').style.display = 'none';
   document.getElementById('repoUploadProgress').style.display = 'none';
   document.getElementById('repoUploadErr').style.display = 'none';
   document.getElementById('repoVersion').value = '1.0';
   document.getElementById('manualUploadModal').classList.add('open');
+
+  // Load equipment list for the selected vessel
+  var eqSel = document.getElementById('repoEqLink');
+  if (!eqSel) return;
+  eqSel.innerHTML = '<option value="">Loading…</option>';
+  if (!repoVesselId) {
+    eqSel.innerHTML = '<option value="">— Select a vessel first —</option>';
+    return;
+  }
+  try {
+    var res = await fetch('/api/custodian/equipment?vessel_id=' + repoVesselId,
+      {headers: {'x-auth-token': getToken()}});
+    var eq = await res.json();
+    if (Array.isArray(eq) && eq.length) {
+      eqSel.innerHTML = '<option value="">Not linked</option>'
+        + eq.map(function(e) {
+          return '<option value="' + e.id + '">' + e.name
+            + (e.maker ? ' — ' + e.maker : '')
+            + (e.model ? ' / ' + e.model : '') + '</option>';
+        }).join('');
+    } else {
+      eqSel.innerHTML = '<option value="">No equipment registered for this vessel</option>';
+    }
+  } catch(err) {
+    eqSel.innerHTML = '<option value="">Error loading equipment</option>';
+  }
 }
 function repoHandleDrop(e) { e.preventDefault(); var f=e.dataTransfer&&e.dataTransfer.files[0]; if(f&&f.type==='application/pdf') repoSetFile(f); else toast('PDF files only'); }
 function repoFileSelected(inp) { if(inp.files&&inp.files[0]) repoSetFile(inp.files[0]); }
